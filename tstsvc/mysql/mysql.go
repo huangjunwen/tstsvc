@@ -34,6 +34,11 @@ var (
 )
 
 var (
+	// Default options.
+	DefaultOptions = &Options{}
+)
+
+var (
 	noopLogger mysql.Logger = nxNoopLogger{}
 	// Copy from github.com/go-sql-driver/mysql/errors.go
 	errLogger mysql.Logger = log.New(os.Stderr, "[mysql] ", log.Ldate|log.Ltime|log.Lshortfile)
@@ -50,11 +55,12 @@ type Options struct {
 	// The root password. Default: DefaultRootPassword.
 	RootPassword string
 
-	// If specified, SQL files inside this host directory will be loaded when MySQL server starts. Default: "".
-	HostInitSQLPath string
-
 	// If specified, MySQL data will be mount to this host directory. Default: "".
 	HostDataPath string
+
+	// If specified, SQL files inside this host directory will be loaded when MySQL server initialize. Default: "".
+	// NOTE: These files will not be loaded if already have initialized.
+	HostInitSQLPath string
 
 	// If specified, the port 3306/tcp will be mapped to it. Default: DefaultHostPort.
 	HostPort uint16
@@ -168,4 +174,14 @@ func (o *Options) DSN() string {
 	}
 
 	return fmt.Sprintf("root:%s@tcp(localhost:%d)/%s?parseTime=true", rootPassword, hostPort, databaseName)
+}
+
+// Run is equivalent to DefaultOptions.Run(pool).
+func Run(pool *dockertest.Pool) (*dockertest.Resource, error) {
+	return DefaultOptions.Run(pool)
+}
+
+// DSN is equivalent to DefaultOptions.DSN().
+func DSN() string {
+	return DefaultOptions.DSN()
 }
