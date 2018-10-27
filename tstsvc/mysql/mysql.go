@@ -56,10 +56,11 @@ type Options struct {
 	RootPassword string
 
 	// If specified, MySQL data will be mount to this host directory. Default: "".
+	// NOTE: The directory must be either contain an existing MySQL database or completely empty.
 	HostDataPath string
 
 	// If specified, SQL files inside this host directory will be loaded when MySQL server initialize. Default: "".
-	// NOTE: These files will not be loaded if already have initialized.
+	// NOTE: These files will not be loaded if HostDataPath is specified and contains an existing database.
 	HostInitSQLPath string
 
 	// If specified, the port 3306/tcp will be mapped to it. Default: DefaultHostPort.
