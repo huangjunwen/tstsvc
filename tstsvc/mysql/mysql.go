@@ -26,9 +26,6 @@ var (
 	// Default root password.
 	DefaultRootPassword = "123456"
 
-	// Default host port.
-	DefaultHostPort uint16 = 53306
-
 	// Default container expire time.
 	DefaultExpire uint = 120
 )
@@ -63,7 +60,7 @@ type Options struct {
 	// NOTE: These files will not be loaded if HostDataPath is specified and contains an existing database.
 	HostInitSQLPath string
 
-	// If specified, the port 3306/tcp will be mapped to it. Default: DefaultHostPort.
+	// If specified, the port 3306/tcp will be mapped to it. Default: random port.
 	HostPort uint16
 
 	// Expire time (in seconds) of the container. Default: DefaultExpire.
@@ -74,8 +71,13 @@ type nxNoopLogger struct{}
 
 func (l nxNoopLogger) Print(v ...interface{}) {}
 
-// Run runs a MySQL test server. If pool is nil, tstsvc.DefaultPool() will be used.
-func (o *Options) Run(pool *dockertest.Pool) (*dockertest.Resource, error) {
+// Run is equivalent to RunFromPool(nil).
+func (o *Options) Run() (res *dockertest.Resource, dsn string, err error) {
+	return o.RunFromPool(nil)
+}
+
+// RunFromPool runs a MySQL test server. If pool is nil, tstsvc.DefaultPool() will be used.
+func (o *Options) RunFromPool(pool *dockertest.Pool) (res *dockertest.Resource, dsn string, err error) {
 	// Get pool.
 	if pool == nil {
 		pool = tstsvc.DefaultPool()
@@ -113,21 +115,19 @@ func (o *Options) Run(pool *dockertest.Pool) (*dockertest.Resource, error) {
 		opts.Mounts = append(opts.Mounts, fmt.Sprintf("%s:/var/lib/mysql", o.HostDataPath))
 	}
 
-	hostPort := o.HostPort
-	if hostPort == 0 {
-		hostPort = DefaultHostPort
-	}
-	opts.PortBindings["3306/tcp"] = []dc.PortBinding{
-		dc.PortBinding{
-			HostIP:   "localhost",
-			HostPort: fmt.Sprintf("%d", hostPort),
-		},
+	if o.HostPort != 0 {
+		opts.PortBindings["3306/tcp"] = []dc.PortBinding{
+			dc.PortBinding{
+				HostIP:   "localhost",
+				HostPort: fmt.Sprintf("%d", o.HostPort),
+			},
+		}
 	}
 
 	// Now starts the container.
-	res, err := pool.RunWithOptions(opts)
+	res, err = pool.RunWithOptions(opts)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	// Set expire of the container.
@@ -141,8 +141,15 @@ func (o *Options) Run(pool *dockertest.Pool) (*dockertest.Resource, error) {
 	mysql.SetLogger(noopLogger)
 	defer mysql.SetLogger(errLogger)
 
+	// Format data source name.
+	dsn = fmt.Sprintf(
+		"root:%s@tcp(localhost:%s)/%s?parseTime=true",
+		rootPassword,
+		res.GetPort("3306/tcp"),
+		databaseName,
+	)
+
 	// Wait.
-	dsn := o.DSN()
 	if err := pool.Retry(func() error {
 		db, err := sql.Open("mysql", dsn)
 		if err != nil {
@@ -151,38 +158,20 @@ func (o *Options) Run(pool *dockertest.Pool) (*dockertest.Resource, error) {
 		defer db.Close()
 		return db.Ping()
 	}); err != nil {
-		return nil, err
+		res.Close()
+		return nil, "", err
 	}
-	return res, nil
+
+	return res, dsn, nil
 
 }
 
-// DSN returns the data source name of the running MySQL test server.
-func (o *Options) DSN() string {
-	databaseName := o.DatabaseName
-	if databaseName == "" {
-		databaseName = DefaultDatabaseName
-	}
-
-	rootPassword := o.RootPassword
-	if rootPassword == "" {
-		rootPassword = DefaultRootPassword
-	}
-
-	hostPort := o.HostPort
-	if hostPort == 0 {
-		hostPort = DefaultHostPort
-	}
-
-	return fmt.Sprintf("root:%s@tcp(localhost:%d)/%s?parseTime=true", rootPassword, hostPort, databaseName)
+// Run is equivalent to DefaultOptions.Run().
+func Run() (res *dockertest.Resource, dsn string, err error) {
+	return DefaultOptions.Run()
 }
 
-// Run is equivalent to DefaultOptions.Run(pool).
-func Run(pool *dockertest.Pool) (*dockertest.Resource, error) {
-	return DefaultOptions.Run(pool)
-}
-
-// DSN is equivalent to DefaultOptions.DSN().
-func DSN() string {
-	return DefaultOptions.DSN()
+// RunFromPool is equivalent to DefaultOptions.RunFromPool(pool).
+func RunFromPool(pool *dockertest.Pool) (res *dockertest.Resource, dsn string, err error) {
+	return DefaultOptions.RunFromPool(pool)
 }

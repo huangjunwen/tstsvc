@@ -66,17 +66,18 @@ func TestRun(t *testing.T) {
 
 	// Run the first server.
 	var res1 *dockertest.Resource
+	var dsn1 string
 	{
-		res1, err = opts.Run(nil)
+		res1, dsn1, err = opts.Run()
 		assert.NoError(err)
 		defer res1.Close()
 	}
-	log.Printf("The first MySQL server is up.\n")
+	log.Printf("The first MySQL server is up, DSN: %+q.\n", dsn1)
 
 	// Connect to the first server.
 	var db1 *sql.DB
 	{
-		db1, err = sql.Open("mysql", opts.DSN())
+		db1, err = sql.Open("mysql", dsn1)
 		assert.NoError(err)
 		defer db1.Close()
 	}
@@ -104,17 +105,18 @@ func TestRun(t *testing.T) {
 
 	// Run the second server.
 	var res2 *dockertest.Resource
+	var dsn2 string
 	{
-		res2, err = opts.Run(nil)
+		res2, dsn2, err = opts.Run()
 		assert.NoError(err)
 		defer res2.Close()
 	}
-	log.Printf("The second MySQL server is up.\n")
+	log.Printf("The second MySQL server is up, DSN: %+q.\n", dsn2)
 
 	// Connect to the second server.
 	var db2 *sql.DB
 	{
-		db2, err = sql.Open("mysql", opts.DSN())
+		db2, err = sql.Open("mysql", dsn2)
 		assert.NoError(err)
 		defer db2.Close()
 	}

@@ -2,8 +2,7 @@ package tstsvc
 
 import (
 	"log"
-	"math/rand"
-	"time"
+	"net"
 
 	"github.com/ory/dockertest"
 )
@@ -18,8 +17,6 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	rand.Seed(time.Now().UnixNano())
 }
 
 // DefaultPool returns the default dockertest Pool.
@@ -27,7 +24,13 @@ func DefaultPool() *dockertest.Pool {
 	return defaultPool
 }
 
-// RandPort returns a random port number.
-func RandPort() uint16 {
-	return 50000 + uint16(rand.Int()%14983)
+// FreePort returns a free tcp port number ready to use.
+// See: https://stackoverflow.com/a/43425461/157235
+func FreePort() uint16 {
+	l, err := net.Listen("tcp4", ":0")
+	if err != nil {
+		panic(err)
+	}
+	defer l.Close()
+	return uint16(l.Addr().(*net.TCPAddr).Port)
 }
