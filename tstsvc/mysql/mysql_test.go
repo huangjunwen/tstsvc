@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ory/dockertest"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -63,22 +62,22 @@ func TestRun(t *testing.T) {
 		HostInitSQLPath: initDir,
 		HostDataPath:    dataDir,
 	}
+	log.Printf("%#v\n", *opts)
 
 	// Run the first server.
-	var res1 *dockertest.Resource
-	var dsn1 string
+	var res1 *Resource
 	{
-		res1, err = opts.Run()
+		res1, err = Run(opts)
 		assert.NoError(err)
 		defer res1.Close()
-		dsn1 = opts.DSN(res1)
 	}
-	log.Printf("The first MySQL server is up, DSN: %+q.\n", dsn1)
+	log.Printf("The first MySQL server is up, DSN: %+q.\n", res1.DSN())
+	log.Printf("%#v\n", res1.Options)
 
 	// Connect to the first server.
 	var db1 *sql.DB
 	{
-		db1, err = sql.Open("mysql", dsn1)
+		db1, err = res1.Client()
 		assert.NoError(err)
 		defer db1.Close()
 	}
@@ -105,20 +104,19 @@ func TestRun(t *testing.T) {
 	log.Printf("The first MySQL server is down.\n")
 
 	// Run the second server.
-	var res2 *dockertest.Resource
-	var dsn2 string
+	var res2 *Resource
 	{
-		res2, err = opts.Run()
+		res2, err = Run(opts)
 		assert.NoError(err)
 		defer res2.Close()
-		dsn2 = opts.DSN(res2)
 	}
-	log.Printf("The second MySQL server is up, DSN: %+q.\n", dsn2)
+	log.Printf("The second MySQL server is up, DSN: %+q.\n", res2.DSN())
+	log.Printf("%#v\n", res2.Options)
 
 	// Connect to the second server.
 	var db2 *sql.DB
 	{
-		db2, err = sql.Open("mysql", dsn2)
+		db2, err = res2.Client()
 		assert.NoError(err)
 		defer db2.Close()
 	}

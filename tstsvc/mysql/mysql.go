@@ -21,7 +21,7 @@ var (
 	DefaultTag = "5.7.21"
 
 	// Default database name.
-	DefaultDatabaseName = "tst"
+	DefaultDBName = "tst"
 
 	// Default root password.
 	DefaultRootPassword = "123456"
@@ -32,7 +32,7 @@ var (
 
 var (
 	// Default options.
-	Default = &Options{}
+	defaultOptions = &Options{}
 )
 
 var (
@@ -41,13 +41,22 @@ var (
 	errLogger mysql.Logger = log.New(os.Stderr, "[mysql] ", log.Ldate|log.Ltime|log.Lshortfile)
 )
 
+// Resource represents a test MySQL server.
+type Resource struct {
+	// MySQL docker container.
+	*dockertest.Resource
+
+	// Actual options.
+	Options
+}
+
 // Options is options to run a MySQL test server.
 type Options struct {
 	// Tag of the repository. Default: DefaultTag.
 	Tag string
 
-	// The database created when MySQL server starts. Default: DefaultDatabaseName.
-	DatabaseName string
+	// The database created when MySQL server starts. Default: DefaultDBName.
+	DBName string
 
 	// The root password. Default: DefaultRootPassword.
 	RootPassword string
@@ -71,107 +80,84 @@ type nxNoopLogger struct{}
 
 func (l nxNoopLogger) Print(v ...interface{}) {}
 
-// GetTag gets Tag or DefaultTag.
-func (o *Options) GetTag() string {
-	if o.Tag != "" {
-		return o.Tag
-	}
-	return DefaultTag
+// Run is equivalent to RunFromPool(nil, opts).
+func Run(opts *Options) (*Resource, error) {
+	return RunFromPool(nil, opts)
 }
 
-// GetDatabaseName gets DatabaseName or DefaultDatabaseName.
-func (o *Options) GetDatabaseName() string {
-	if o.DatabaseName != "" {
-		return o.DatabaseName
-	}
-	return DefaultDatabaseName
-}
-
-// GetRootPassword gets RootPassword or DefaultRootPassword.
-func (o *Options) GetRootPassword() string {
-	if o.RootPassword != "" {
-		return o.RootPassword
-	}
-	return DefaultRootPassword
-}
-
-// GetExpire gets Expire or DefaultExpire.
-func (o *Options) GetExpire() uint {
-	if o.Expire > 0 {
-		return o.Expire
-	}
-	return DefaultExpire
-}
-
-// DSN returns the data source name of a given MySQL resource.
-func (o *Options) DSN(res *dockertest.Resource) string {
-	return fmt.Sprintf(
-		"root:%s@tcp(localhost:%s)/%s?parseTime=true",
-		o.GetRootPassword(),
-		res.GetPort("3306/tcp"),
-		o.GetDatabaseName(),
-	)
-}
-
-// Run is equivalent to RunFromPool(nil).
-func (o *Options) Run() (*dockertest.Resource, error) {
-	return o.RunFromPool(nil)
-}
-
-// RunFromPool runs a MySQL test server. If pool is nil, tstsvc.DefaultPool() will be used.
-func (o *Options) RunFromPool(pool *dockertest.Pool) (*dockertest.Resource, error) {
-	// Get pool.
+// RunFromPool runs a test MySQL server. If pool is nil, tstsvc.DefaultPool() will be used.
+// If opts is nil, the default options will be used.
+func RunFromPool(pool *dockertest.Pool, opts *Options) (*Resource, error) {
+	// Handle nil case.
 	if pool == nil {
 		pool = tstsvc.DefaultPool()
 	}
+	if opts == nil {
+		opts = defaultOptions
+	}
 
-	// Collect run options.
-	opts := &dockertest.RunOptions{
+	// Collect options.
+	res := &Resource{
+		Options: *opts,
+	}
+	opts = &res.Options
+
+	if opts.Tag == "" {
+		opts.Tag = DefaultTag
+	}
+	if opts.DBName == "" {
+		opts.DBName = DefaultDBName
+	}
+	if opts.RootPassword == "" {
+		opts.RootPassword = DefaultRootPassword
+	}
+	if opts.HostPort == 0 {
+		opts.HostPort = tstsvc.FreePort()
+	}
+	if opts.Expire == 0 {
+		opts.Expire = DefaultExpire
+	}
+
+	// Run the container.
+	runOpts := &dockertest.RunOptions{
 		Repository: Repository,
-		Tag:        o.GetTag(),
+		Tag:        opts.Tag,
 		Env: []string{
-			fmt.Sprintf("MYSQL_DATABASE=%s", o.GetDatabaseName()),
-			fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", o.GetRootPassword()),
+			fmt.Sprintf("MYSQL_DATABASE=%s", opts.DBName),
+			fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", opts.RootPassword),
 		},
-		PortBindings: map[dc.Port][]dc.PortBinding{},
-	}
-
-	if o.HostInitSQLPath != "" {
-		opts.Mounts = append(opts.Mounts, fmt.Sprintf("%s:/docker-entrypoint-initdb.d", o.HostInitSQLPath))
-	}
-
-	if o.HostDataPath != "" {
-		opts.Mounts = append(opts.Mounts, fmt.Sprintf("%s:/var/lib/mysql", o.HostDataPath))
-	}
-
-	if o.HostPort != 0 {
-		opts.PortBindings["3306/tcp"] = []dc.PortBinding{
-			dc.PortBinding{
-				HostIP:   "localhost",
-				HostPort: fmt.Sprintf("%d", o.HostPort),
+		PortBindings: map[dc.Port][]dc.PortBinding{
+			"3306/tcp": []dc.PortBinding{
+				dc.PortBinding{
+					HostIP:   "localhost",
+					HostPort: fmt.Sprintf("%d", opts.HostPort),
+				},
 			},
-		}
+		},
+	}
+	if opts.HostInitSQLPath != "" {
+		runOpts.Mounts = append(runOpts.Mounts, fmt.Sprintf("%s:/docker-entrypoint-initdb.d", opts.HostInitSQLPath))
+	}
+	if opts.HostDataPath != "" {
+		runOpts.Mounts = append(runOpts.Mounts, fmt.Sprintf("%s:/var/lib/mysql", opts.HostDataPath))
 	}
 
-	// Now starts the container.
-	res, err := pool.RunWithOptions(opts)
+	var err error
+	res.Resource, err = pool.RunWithOptions(runOpts)
 	if err != nil {
 		return nil, err
 	}
 
 	// Set expire of the container.
-	res.Expire(o.GetExpire())
+	res.Resource.Expire(opts.Expire)
 
 	// Suppress error output when waiting server up.
 	mysql.SetLogger(noopLogger)
 	defer mysql.SetLogger(errLogger)
 
-	// Format data source name.
-	dsn := o.DSN(res)
-
 	// Wait.
 	if err := pool.Retry(func() error {
-		db, err := sql.Open("mysql", dsn)
+		db, err := res.Client()
 		if err != nil {
 			return err
 		}
@@ -183,5 +169,19 @@ func (o *Options) RunFromPool(pool *dockertest.Pool) (*dockertest.Resource, erro
 	}
 
 	return res, nil
+}
 
+// DSN returns the data source name of the test MySQL server.
+func (res *Resource) DSN() string {
+	return fmt.Sprintf(
+		"root:%s@tcp(localhost:%d)/%s?parseTime=true",
+		res.Options.RootPassword,
+		res.Options.HostPort,
+		res.Options.DBName,
+	)
+}
+
+// Client returns a client to the test MySQL server.
+func (res *Resource) Client() (*sql.DB, error) {
+	return sql.Open("mysql", res.DSN())
 }
