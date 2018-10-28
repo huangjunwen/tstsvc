@@ -68,9 +68,10 @@ func TestRun(t *testing.T) {
 	var res1 *dockertest.Resource
 	var dsn1 string
 	{
-		res1, dsn1, err = opts.Run()
+		res1, err = opts.Run()
 		assert.NoError(err)
 		defer res1.Close()
+		dsn1 = opts.DSN(res1)
 	}
 	log.Printf("The first MySQL server is up, DSN: %+q.\n", dsn1)
 
@@ -107,9 +108,10 @@ func TestRun(t *testing.T) {
 	var res2 *dockertest.Resource
 	var dsn2 string
 	{
-		res2, dsn2, err = opts.Run()
+		res2, err = opts.Run()
 		assert.NoError(err)
 		defer res2.Close()
+		dsn2 = opts.DSN(res2)
 	}
 	log.Printf("The second MySQL server is up, DSN: %+q.\n", dsn2)
 

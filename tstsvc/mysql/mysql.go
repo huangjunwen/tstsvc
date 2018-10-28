@@ -32,7 +32,7 @@ var (
 
 var (
 	// Default options.
-	DefaultOptions = &Options{}
+	Default = &Options{}
 )
 
 var (
@@ -71,13 +71,55 @@ type nxNoopLogger struct{}
 
 func (l nxNoopLogger) Print(v ...interface{}) {}
 
+// GetTag gets Tag or DefaultTag.
+func (o *Options) GetTag() string {
+	if o.Tag != "" {
+		return o.Tag
+	}
+	return DefaultTag
+}
+
+// GetDatabaseName gets DatabaseName or DefaultDatabaseName.
+func (o *Options) GetDatabaseName() string {
+	if o.DatabaseName != "" {
+		return o.DatabaseName
+	}
+	return DefaultDatabaseName
+}
+
+// GetRootPassword gets RootPassword or DefaultRootPassword.
+func (o *Options) GetRootPassword() string {
+	if o.RootPassword != "" {
+		return o.RootPassword
+	}
+	return DefaultRootPassword
+}
+
+// GetExpire gets Expire or DefaultExpire.
+func (o *Options) GetExpire() uint {
+	if o.Expire > 0 {
+		return o.Expire
+	}
+	return DefaultExpire
+}
+
+// DSN returns the data source name of a given MySQL resource.
+func (o *Options) DSN(res *dockertest.Resource) string {
+	return fmt.Sprintf(
+		"root:%s@tcp(localhost:%s)/%s?parseTime=true",
+		o.GetRootPassword(),
+		res.GetPort("3306/tcp"),
+		o.GetDatabaseName(),
+	)
+}
+
 // Run is equivalent to RunFromPool(nil).
-func (o *Options) Run() (res *dockertest.Resource, dsn string, err error) {
+func (o *Options) Run() (*dockertest.Resource, error) {
 	return o.RunFromPool(nil)
 }
 
 // RunFromPool runs a MySQL test server. If pool is nil, tstsvc.DefaultPool() will be used.
-func (o *Options) RunFromPool(pool *dockertest.Pool) (res *dockertest.Resource, dsn string, err error) {
+func (o *Options) RunFromPool(pool *dockertest.Pool) (*dockertest.Resource, error) {
 	// Get pool.
 	if pool == nil {
 		pool = tstsvc.DefaultPool()
@@ -85,27 +127,14 @@ func (o *Options) RunFromPool(pool *dockertest.Pool) (res *dockertest.Resource, 
 
 	// Collect run options.
 	opts := &dockertest.RunOptions{
-		Repository:   Repository,
+		Repository: Repository,
+		Tag:        o.GetTag(),
+		Env: []string{
+			fmt.Sprintf("MYSQL_DATABASE=%s", o.GetDatabaseName()),
+			fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", o.GetRootPassword()),
+		},
 		PortBindings: map[dc.Port][]dc.PortBinding{},
 	}
-
-	tag := o.Tag
-	if tag == "" {
-		tag = DefaultTag
-	}
-	opts.Tag = tag
-
-	databaseName := o.DatabaseName
-	if databaseName == "" {
-		databaseName = DefaultDatabaseName
-	}
-	opts.Env = append(opts.Env, fmt.Sprintf("MYSQL_DATABASE=%s", databaseName))
-
-	rootPassword := o.RootPassword
-	if rootPassword == "" {
-		rootPassword = DefaultRootPassword
-	}
-	opts.Env = append(opts.Env, fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", rootPassword))
 
 	if o.HostInitSQLPath != "" {
 		opts.Mounts = append(opts.Mounts, fmt.Sprintf("%s:/docker-entrypoint-initdb.d", o.HostInitSQLPath))
@@ -125,29 +154,20 @@ func (o *Options) RunFromPool(pool *dockertest.Pool) (res *dockertest.Resource, 
 	}
 
 	// Now starts the container.
-	res, err = pool.RunWithOptions(opts)
+	res, err := pool.RunWithOptions(opts)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	// Set expire of the container.
-	expire := o.Expire
-	if expire == 0 {
-		expire = DefaultExpire
-	}
-	res.Expire(expire)
+	res.Expire(o.GetExpire())
 
 	// Suppress error output when waiting server up.
 	mysql.SetLogger(noopLogger)
 	defer mysql.SetLogger(errLogger)
 
 	// Format data source name.
-	dsn = fmt.Sprintf(
-		"root:%s@tcp(localhost:%s)/%s?parseTime=true",
-		rootPassword,
-		res.GetPort("3306/tcp"),
-		databaseName,
-	)
+	dsn := o.DSN(res)
 
 	// Wait.
 	if err := pool.Retry(func() error {
@@ -159,19 +179,9 @@ func (o *Options) RunFromPool(pool *dockertest.Pool) (res *dockertest.Resource, 
 		return db.Ping()
 	}); err != nil {
 		res.Close()
-		return nil, "", err
+		return nil, err
 	}
 
-	return res, dsn, nil
+	return res, nil
 
-}
-
-// Run is equivalent to DefaultOptions.Run().
-func Run() (res *dockertest.Resource, dsn string, err error) {
-	return DefaultOptions.Run()
-}
-
-// RunFromPool is equivalent to DefaultOptions.RunFromPool(pool).
-func RunFromPool(pool *dockertest.Pool) (res *dockertest.Resource, dsn string, err error) {
-	return DefaultOptions.RunFromPool(pool)
 }
