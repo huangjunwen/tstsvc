@@ -163,3 +163,9 @@ func RunFromPool(pool *dockertest.Pool, opts *Options) (*Resource, error) {
 func (res *Resource) NatsURL() string {
 	return fmt.Sprintf("nats://localhost:%d", res.Options.HostPort)
 }
+
+// Client returns a client of the test stan server identified by clientId.
+func (res *Resource) Client(clientId string, opts ...stan.Option) (stan.Conn, error) {
+	opts = append(opts, stan.NatsURL(res.NatsURL()))
+	return stan.Connect(res.Options.ClusterId, clientId, opts...)
+}
