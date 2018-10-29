@@ -47,7 +47,7 @@ func TestRun(t *testing.T) {
 	// Connect to the first server.
 	var client1 stan.Conn
 	{
-		client1, err = res1.Client(clientId)
+		client1, err = res1.StanClient(clientId)
 		assert.NoError(err)
 		defer client1.Close()
 	}
@@ -86,10 +86,14 @@ func TestRun(t *testing.T) {
 	log.Printf("The second nats streaming server is up, nats url: %+q.\n", res2.NatsURL())
 	log.Printf("%#v\n", res2.Options)
 
-	// Connect to the second server.
+	// Connect to the second server using raw nats connection.
 	var client2 stan.Conn
 	{
-		client2, err = res2.Client(clientId)
+		nc, err := res2.NatsClient()
+		assert.NoError(err)
+		defer nc.Close()
+
+		client2, err = stan.Connect(res2.Options.ClusterId, clientId, stan.NatsConn(nc))
 		assert.NoError(err)
 		defer client2.Close()
 	}

@@ -6,7 +6,8 @@ import (
 
 	"github.com/huangjunwen/tstsvc/tstsvc"
 
-	"github.com/nats-io/go-nats-streaming"
+	nats "github.com/nats-io/go-nats"
+	stan "github.com/nats-io/go-nats-streaming"
 	"github.com/ory/dockertest"
 	dc "github.com/ory/dockertest/docker"
 )
@@ -164,8 +165,13 @@ func (res *Resource) NatsURL() string {
 	return fmt.Sprintf("nats://localhost:%d", res.Options.HostPort)
 }
 
-// Client returns a client of the test stan server identified by clientId.
-func (res *Resource) Client(clientId string, opts ...stan.Option) (stan.Conn, error) {
+// NatsClient returns a nats client of the embedded nats server of the test nats streaming server.
+func (res *Resource) NatsClient(opts ...nats.Option) (*nats.Conn, error) {
+	return nats.Connect(res.NatsURL(), opts...)
+}
+
+// StanClient returns a stan client of the test nats streaming server identified by clientId.
+func (res *Resource) StanClient(clientId string, opts ...stan.Option) (stan.Conn, error) {
 	opts = append(opts, stan.NatsURL(res.NatsURL()))
 	return stan.Connect(res.Options.ClusterId, clientId, opts...)
 }
