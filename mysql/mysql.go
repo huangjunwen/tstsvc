@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/huangjunwen/tstsvc/tstsvc"
+	"github.com/huangjunwen/tstsvc"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/ory/dockertest"

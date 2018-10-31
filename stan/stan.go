@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/huangjunwen/tstsvc/tstsvc"
+	"github.com/huangjunwen/tstsvc"
 
 	nats "github.com/nats-io/go-nats"
 	stan "github.com/nats-io/go-nats-streaming"
