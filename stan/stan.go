@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/huangjunwen/tstsvc"
-
 	nats "github.com/nats-io/go-nats"
 	stan "github.com/nats-io/go-nats-streaming"
 	"github.com/ory/dockertest"
 	dc "github.com/ory/dockertest/docker"
+
+	"github.com/huangjunwen/tstsvc"
 )
 
 var (

@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/huangjunwen/tstsvc"
-
 	nats "github.com/nats-io/go-nats"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/huangjunwen/tstsvc"
 )
 
 const (

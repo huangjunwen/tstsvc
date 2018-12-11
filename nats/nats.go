@@ -3,11 +3,11 @@ package tstnats
 import (
 	"fmt"
 
-	"github.com/huangjunwen/tstsvc"
-
 	nats "github.com/nats-io/go-nats"
 	"github.com/ory/dockertest"
 	dc "github.com/ory/dockertest/docker"
+
+	"github.com/huangjunwen/tstsvc"
 )
 
 var (

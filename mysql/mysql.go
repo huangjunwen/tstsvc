@@ -6,11 +6,11 @@ import (
 	"log"
 	"os"
 
-	"github.com/huangjunwen/tstsvc"
-
 	"github.com/go-sql-driver/mysql"
 	"github.com/ory/dockertest"
 	dc "github.com/ory/dockertest/docker"
+
+	"github.com/huangjunwen/tstsvc"
 )
 
 var (
