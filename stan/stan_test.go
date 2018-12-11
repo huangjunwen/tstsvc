@@ -71,7 +71,7 @@ func TestRun(t *testing.T) {
 	}
 	log.Printf("Publishd to %+q and handled.\n", subject)
 
-	// Stop the first server.
+	// Stop the first server/client.
 	res1.Close()
 	client1.Close()
 	log.Printf("The first nats streaming server is down.\n")
