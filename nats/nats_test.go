@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	nats "github.com/nats-io/go-nats"
+	nats "github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/huangjunwen/tstsvc"

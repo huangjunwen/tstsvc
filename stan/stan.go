@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	nats "github.com/nats-io/go-nats"
-	stan "github.com/nats-io/go-nats-streaming"
+	nats "github.com/nats-io/nats.go"
+	stan "github.com/nats-io/stan.go"
 	"github.com/ory/dockertest"
 	dc "github.com/ory/dockertest/docker"
 
@@ -17,7 +17,7 @@ var (
 	Repository = "nats-streaming"
 
 	// Default tag.
-	DefaultTag = "0.11.2-linux"
+	DefaultTag = "0.14.3-linux"
 
 	// Default cluster id.
 	DefaultClusterId = "tststan"

@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nats-io/go-nats-streaming"
+	stan "github.com/nats-io/stan.go"
 	"github.com/stretchr/testify/assert"
 )
 

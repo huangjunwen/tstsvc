@@ -3,7 +3,7 @@ package tstnats
 import (
 	"fmt"
 
-	nats "github.com/nats-io/go-nats"
+	nats "github.com/nats-io/nats.go"
 	"github.com/ory/dockertest"
 	dc "github.com/ory/dockertest/docker"
 
@@ -15,7 +15,7 @@ var (
 	Repository = "nats"
 
 	// Default tag.
-	DefaultTag = "1.3.0-linux"
+	DefaultTag = "2.0.0-linux"
 
 	// Default container expire time.
 	DefaultExpire uint = 120
