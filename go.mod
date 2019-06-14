@@ -25,8 +25,8 @@ require (
 	github.com/ory/dockertest v3.3.4+incompatible
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/stretchr/testify v1.3.0
-	golang.org/x/net v0.0.0-20190607181551-461777fb6f67 // indirect
-	golang.org/x/sys v0.0.0-20190608050228-5b15430b70e3 // indirect
+	golang.org/x/net v0.0.0-20190613194153-d28f0bde5980 // indirect
+	golang.org/x/sys v0.0.0-20190613124609-5ed2794edfdc // indirect
 	google.golang.org/appengine v1.6.1 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 )
