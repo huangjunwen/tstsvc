@@ -48,6 +48,9 @@ type Options struct {
 
 	// Expire time (in seconds) of the container. Default: DefaultExpire.
 	Expire uint
+
+	// BaseRunOptions is the base options, will be overrided by above.
+	BaseRunOptions dockertest.RunOptions
 }
 
 // Run is equivalent to RunFromPool(nil, opts).
@@ -82,25 +85,28 @@ func RunFromPool(pool *dockertest.Pool, opts *Options) (*Resource, error) {
 		opts.Expire = DefaultExpire
 	}
 
-	// Run the container.
-	runOpts := &dockertest.RunOptions{
-		Repository: Repository,
-		Tag:        opts.Tag,
-		PortBindings: map[dc.Port][]dc.PortBinding{
-			"6379/tcp": []dc.PortBinding{
-				dc.PortBinding{
-					HostIP:   "localhost",
-					HostPort: fmt.Sprintf("%d", opts.HostPort),
-				},
-			},
-		},
+	// Copy and collect RunOptions.
+	runOpts := opts.BaseRunOptions
+	runOpts.Mounts = append([]string(nil), runOpts.Mounts...)
+
+	if runOpts.Repository == "" {
+		runOpts.Repository = Repository
 	}
+	runOpts.Tag = opts.Tag
 	if opts.HostDataPath != "" {
 		runOpts.Mounts = append(runOpts.Mounts, fmt.Sprintf("%s:/data", opts.HostDataPath))
 	}
+	runOpts.PortBindings = map[dc.Port][]dc.PortBinding{
+		"6379/tcp": []dc.PortBinding{
+			dc.PortBinding{
+				HostIP:   "localhost",
+				HostPort: fmt.Sprintf("%d", opts.HostPort),
+			},
+		},
+	}
 
 	var err error
-	res.Resource, err = pool.RunWithOptions(runOpts)
+	res.Resource, err = pool.RunWithOptions(&runOpts)
 	if err != nil {
 		return nil, err
 	}

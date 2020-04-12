@@ -74,6 +74,9 @@ type Options struct {
 
 	// Expire time (in seconds) of the container. Default: DefaultExpire.
 	Expire uint
+
+	// BaseRunOptions is the base options, will be overrided by above.
+	BaseRunOptions dockertest.RunOptions
 }
 
 type nxNoopLogger struct{}
@@ -118,32 +121,36 @@ func RunFromPool(pool *dockertest.Pool, opts *Options) (*Resource, error) {
 		opts.Expire = DefaultExpire
 	}
 
-	// Run the container.
-	runOpts := &dockertest.RunOptions{
-		Repository: Repository,
-		Tag:        opts.Tag,
-		Env: []string{
-			fmt.Sprintf("MYSQL_DATABASE=%s", opts.DBName),
-			fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", opts.RootPassword),
-		},
-		PortBindings: map[dc.Port][]dc.PortBinding{
-			"3306/tcp": []dc.PortBinding{
-				dc.PortBinding{
-					HostIP:   "localhost",
-					HostPort: fmt.Sprintf("%d", opts.HostPort),
-				},
-			},
-		},
+	// Copy and collect RunOptions.
+	runOpts := opts.BaseRunOptions
+	runOpts.Env = append([]string(nil), runOpts.Env...)
+	runOpts.Mounts = append([]string(nil), runOpts.Mounts...)
+
+	if runOpts.Repository == "" {
+		runOpts.Repository = Repository
 	}
+	runOpts.Tag = opts.Tag
+	runOpts.Env = append(runOpts.Env,
+		fmt.Sprintf("MYSQL_DATABASE=%s", opts.DBName),
+		fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", opts.RootPassword),
+	)
 	if opts.HostInitSQLPath != "" {
 		runOpts.Mounts = append(runOpts.Mounts, fmt.Sprintf("%s:/docker-entrypoint-initdb.d", opts.HostInitSQLPath))
 	}
 	if opts.HostDataPath != "" {
 		runOpts.Mounts = append(runOpts.Mounts, fmt.Sprintf("%s:/var/lib/mysql", opts.HostDataPath))
 	}
+	runOpts.PortBindings = map[dc.Port][]dc.PortBinding{
+		"3306/tcp": []dc.PortBinding{
+			dc.PortBinding{
+				HostIP:   "localhost",
+				HostPort: fmt.Sprintf("%d", opts.HostPort),
+			},
+		},
+	}
 
 	var err error
-	res.Resource, err = pool.RunWithOptions(runOpts)
+	res.Resource, err = pool.RunWithOptions(&runOpts)
 	if err != nil {
 		return nil, err
 	}

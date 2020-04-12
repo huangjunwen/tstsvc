@@ -63,6 +63,9 @@ type Options struct {
 
 	// Expire time (in seconds) of the container. Default: DefaultExpire.
 	Expire uint
+
+	// BaseRunOptions is the base options, will be overrided by above.
+	BaseRunOptions dockertest.RunOptions
 }
 
 // Run is equivalent to RunFromPool(nil, opts).
@@ -103,35 +106,39 @@ func RunFromPool(pool *dockertest.Pool, opts *Options) (*Resource, error) {
 		opts.Expire = DefaultExpire
 	}
 
-	// Run the container.
-	runOpts := &dockertest.RunOptions{
-		Repository: Repository,
-		Tag:        opts.Tag,
-		PortBindings: map[dc.Port][]dc.PortBinding{
-			"4222/tcp": []dc.PortBinding{
-				dc.PortBinding{
-					HostIP:   "localhost",
-					HostPort: fmt.Sprintf("%d", opts.HostPort),
-				},
-			},
-			"8222/tcp": []dc.PortBinding{
-				dc.PortBinding{
-					HostIP:   "localhost",
-					HostPort: fmt.Sprintf("%d", opts.HostMonPort),
-				},
-			},
-		},
-		Cmd: []string{"-cid", opts.ClusterId},
+	// Copy and collect RunOptions.
+	runOpts := opts.BaseRunOptions
+	runOpts.Cmd = append([]string(nil), runOpts.Cmd...)
+	runOpts.Mounts = append([]string(nil), runOpts.Mounts...)
+
+	if runOpts.Repository == "" {
+		runOpts.Repository = Repository
 	}
+	runOpts.Tag = opts.Tag
+	runOpts.Cmd = append(runOpts.Cmd, "-cid", opts.ClusterId)
 	if opts.FileStore {
 		runOpts.Cmd = append(runOpts.Cmd, "-st", "FILE", "--dir", "/data")
 		if opts.HostDataPath != "" {
 			runOpts.Mounts = append(runOpts.Mounts, fmt.Sprintf("%s:/data", opts.HostDataPath))
 		}
 	}
+	runOpts.PortBindings = map[dc.Port][]dc.PortBinding{
+		"4222/tcp": []dc.PortBinding{
+			dc.PortBinding{
+				HostIP:   "localhost",
+				HostPort: fmt.Sprintf("%d", opts.HostPort),
+			},
+		},
+		"8222/tcp": []dc.PortBinding{
+			dc.PortBinding{
+				HostIP:   "localhost",
+				HostPort: fmt.Sprintf("%d", opts.HostMonPort),
+			},
+		},
+	}
 
 	var err error
-	res.Resource, err = pool.RunWithOptions(runOpts)
+	res.Resource, err = pool.RunWithOptions(&runOpts)
 	if err != nil {
 		return nil, err
 	}
