@@ -18,7 +18,7 @@ var (
 	Repository = "mysql"
 
 	// Default tag.
-	DefaultTag = "5.7.26"
+	DefaultTag = "8.0.19"
 
 	// Default database name.
 	DefaultDBName = "tst"

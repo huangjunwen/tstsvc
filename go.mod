@@ -10,13 +10,14 @@ require (
 	github.com/containerd/continuity v0.0.0-20190426062206-aaeac12a7ffc // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
-	github.com/go-redis/redis v6.15.2+incompatible
-	github.com/go-sql-driver/mysql v1.4.1
-	github.com/google/go-cmp v0.3.0 // indirect
+	github.com/go-redis/redis v6.15.8+incompatible
+	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
+	github.com/nats-io/jwt v1.0.1 // indirect
 	github.com/nats-io/nats-streaming-server v0.15.1 // indirect
-	github.com/nats-io/nats.go v1.8.1
-	github.com/nats-io/stan.go v0.5.0
+	github.com/nats-io/nats.go v1.10.0
+	github.com/nats-io/nkeys v0.2.0 // indirect
+	github.com/nats-io/stan.go v0.7.0
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
@@ -25,8 +26,10 @@ require (
 	github.com/ory/dockertest v3.3.4+incompatible
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/stretchr/testify v1.3.0
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
 	golang.org/x/net v0.0.0-20190613194153-d28f0bde5980 // indirect
 	golang.org/x/sys v0.0.0-20190613124609-5ed2794edfdc // indirect
-	google.golang.org/appengine v1.6.1 // indirect
+	golang.org/x/text v0.3.2 // indirect
+	google.golang.org/protobuf v1.25.0 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 )

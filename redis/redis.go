@@ -15,7 +15,7 @@ var (
 	Repository = "redis"
 
 	// Default tag.
-	DefaultTag = "3.2.12-alpine"
+	DefaultTag = "5.0.9-alpine"
 
 	// Default container expire time.
 	DefaultExpire uint = 120

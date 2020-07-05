@@ -17,7 +17,7 @@ var (
 	Repository = "nats-streaming"
 
 	// Default tag.
-	DefaultTag = "0.15.1-linux"
+	DefaultTag = "0.18-alpine"
 
 	// Default cluster id.
 	DefaultClusterId = "tststan"

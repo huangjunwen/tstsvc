@@ -15,7 +15,7 @@ var (
 	Repository = "nats"
 
 	// Default tag.
-	DefaultTag = "2.0.0-linux"
+	DefaultTag = "2.1.7-alpine"
 
 	// Default container expire time.
 	DefaultExpire uint = 120
