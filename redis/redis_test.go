@@ -1,6 +1,7 @@
 package tstredis
 
 import (
+	"context"
 	"io/ioutil"
 	"log"
 	"os"
@@ -12,6 +13,7 @@ import (
 func TestRun(t *testing.T) {
 	assert := assert.New(t)
 	var err error
+	ctx := context.Background()
 
 	// Create temp directory.
 	tmpDir, err := ioutil.TempDir("/tmp", "tstredis")
@@ -46,11 +48,11 @@ func TestRun(t *testing.T) {
 	value := "valval"
 
 	// Sets a key/value.
-	assert.NoError(client1.Set(key, value, 0).Err())
+	assert.NoError(client1.Set(ctx, key, value, 0).Err())
 	log.Printf("A key/value pair set\n")
 
 	// Save to disk.
-	assert.NoError(client1.Save().Err())
+	assert.NoError(client1.Save(ctx).Err())
 	log.Printf("Saved to disk.\n")
 
 	// Close the first server/client.
@@ -75,7 +77,7 @@ func TestRun(t *testing.T) {
 
 	// Get key and check.
 	{
-		v, err := client2.Get(key).Result()
+		v, err := client2.Get(ctx, key).Result()
 		assert.NoError(err)
 		assert.Equal(value, v)
 	}

@@ -1,9 +1,10 @@
 package tstredis
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v8"
 	"github.com/ory/dockertest"
 	dc "github.com/ory/dockertest/docker"
 
@@ -15,7 +16,7 @@ var (
 	Repository = "redis"
 
 	// Default tag.
-	DefaultTag = "5.0.9-alpine"
+	DefaultTag = "6.0.9-alpine"
 
 	// Default container expire time.
 	DefaultExpire uint = 120
@@ -118,7 +119,7 @@ func RunFromPool(pool *dockertest.Pool, opts *Options) (*Resource, error) {
 	if err := pool.Retry(func() error {
 		client := res.Client()
 		defer client.Close()
-		return client.Ping().Err()
+		return client.Ping(context.Background()).Err()
 	}); err != nil {
 		res.Close()
 		return nil, err
