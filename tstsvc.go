@@ -4,7 +4,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/ory/dockertest"
+	"github.com/ory/dockertest/v3"
 )
 
 var (

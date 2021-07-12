@@ -6,8 +6,8 @@ import (
 
 	nats "github.com/nats-io/nats.go"
 	stan "github.com/nats-io/stan.go"
-	"github.com/ory/dockertest"
-	dc "github.com/ory/dockertest/docker"
+	"github.com/ory/dockertest/v3"
+	dc "github.com/ory/dockertest/v3/docker"
 
 	"github.com/huangjunwen/tstsvc"
 )

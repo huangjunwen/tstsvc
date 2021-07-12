@@ -7,8 +7,8 @@ import (
 	"os"
 
 	"github.com/go-sql-driver/mysql"
-	"github.com/ory/dockertest"
-	dc "github.com/ory/dockertest/docker"
+	"github.com/ory/dockertest/v3"
+	dc "github.com/ory/dockertest/v3/docker"
 
 	"github.com/huangjunwen/tstsvc"
 )
